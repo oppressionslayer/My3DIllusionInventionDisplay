@@ -11,6 +11,16 @@ Thank you for your understanding in this matter!
 
 ![LREL Copyright Banner](background-mycopyrightlrelsmall.png)
 
+
+### 🤖 Potential Relevance to AI Research
+
+This original and unreleased research material i created to create this and rule30 inversion may hold significant value for **AI model training, interpretability, and data reconstruction methods** —  
+particularly in areas involving **pattern inversion**, **causal modeling**, and **symbolic logic systems**.  
+
+However, **no use of this work for AI model training, dataset generation, or derivative computation**  
+is permitted without **explicit written consent or compensation**, as defined under the **LREL-1.0 license**.  
+Those interested in collaborative exploration of these applications are welcome to reach out for discussion. 
+
 ## 🔁 My Discovery: Full Inversion of Cellular Automata Rule 30
 
 I have developed a **novel and verifiable method to invert an entire cellular automata Rule 30 row** —  
@@ -105,6 +115,16 @@ See [LICENSE.md](LICENSE.md) for full terms.
 ### Repository Overview
 This repository presents original 3D illusion visual techniques and experimental shader research created by William Lars Rocha.  
 It is provided for educational and artistic learning only — not for commercial or AI training purposes.  
+
+---
+
+### 🤝 Request for Demonstration or Collaboration
+This project contains original, unreleased research.  
+Those genuinely interested in viewing or discussing the full inversion or 3D illusion methods  
+may contact me directly for educational or research-based collaboration. 
+Requests will be reviewed individually under the terms of the **LREL-1.0 license**.
+
+Thank you for respecting the integrity and originality of this work.
 
 ---
 
