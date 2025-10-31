@@ -4,6 +4,8 @@ _All examples are protected under my license._
 I’m just an average guy who puts a lot of time and creativity into this work — and I truly appreciate your respect for that.  
 Thank you for understanding that this project represents years of personal effort and invention. 🙏  
 
+You can also stereogram this, i like the cross-eyed method the best. but you can see that it is also a stereogram.
+
 ![LREL Copyright Banner](background-mycopyrightlrelsmall.png)
 
 ---
