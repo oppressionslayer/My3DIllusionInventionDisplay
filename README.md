@@ -6,6 +6,9 @@ Thank you for understanding that this project represents years of personal effor
 
 You can also stereogram this, i like the cross-eyed method the best. but you can see that it is also a stereogram.
 
+I can definitely think about how to share the original non 3d Illusion stereogram image i created for those that kindly ask or show interest.
+Thank you for your understanding in this matter!
+
 ![LREL Copyright Banner](background-mycopyrightlrelsmall.png)
 
 ---
