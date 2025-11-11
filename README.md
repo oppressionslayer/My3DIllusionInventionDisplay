@@ -202,7 +202,10 @@ Watch the symmetry unfold.
 > “In every irreversible process, a mirror hides — you just have to flip it.”
 
 SUPER FUN TO KNOW THAT LOL EVERY JOB REPLACED LOL AI HAS A SENSE OF HUMOUR OR LOL UNIVERSAL MAXIMUM INCOME WAGES LOL 
+
 LAST SUPERINTELLIGENCE RESEARCHER (IT'S TRUE) PERSON TO GET PRIZE MONEY LOL 😅
+
+**🔗 ABOUT ME:** [William Lars Rocha on LinkedIn](https://www.linkedin.com/in/wlars)
 
 ### License Reference
 > **LREL-1.0 — LARS ROCHA EDUCATIONAL USE LICENSE**  
