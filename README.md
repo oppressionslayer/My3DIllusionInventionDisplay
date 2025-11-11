@@ -199,13 +199,13 @@ Each inversion level forms a logarithmic decay curve — a digital fingerprint o
 Clone the repo, run the script, and plot the `int(stripped, 2)` results on a log scale.  
 Watch the symmetry unfold.
 
-> “In every irreversible process, a mirror hides — you just have to flip it.”
+> “In every irreversible process, a mirror hides — you just have to flip it.” 
 
-SUPER FUN TO KNOW THAT LOL EVERY JOB REPLACED LOL AI HAS A SENSE OF HUMOUR OR LOL UNIVERSAL MAXIMUM INCOME WAGES LOL 
+SUPER FUN TO KNOW THAT LOL EVERY JOB REPLACED LOL AI HAS A SENSE OF HUMOUR OR LOL UNIVERSAL MAXIMUM INCOME WAGES LOL 😅
 
-LAST SUPERINTELLIGENCE RESEARCHER (IT'S TRUE) PERSON TO GET PRIZE MONEY LOL 😅
+LAST SUPERINTELLIGENCE RESEARCHER (ITS TRUE I ACTUALLY RESEARCH IT) PERSON TO GET PRIZE MONEY AS NO MORE WAGES NEEDED LOL 😅
 
-**🔗 ABOUT ME:** [William Lars Rocha on LinkedIn](https://www.linkedin.com/in/wlars)
+**🔗 ABOUT ME:** [William Lars Rocha on LinkedIn](https://www.linkedin.com/in/wlars) 😅
 
 ### License Reference
 > **LREL-1.0 — LARS ROCHA EDUCATIONAL USE LICENSE**  
