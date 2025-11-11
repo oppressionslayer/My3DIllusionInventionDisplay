@@ -35,6 +35,56 @@ demonstrates that **full reversibility is achievable in principle**.
 > I welcome collaboration, inquiries, or demonstrations under educational and research contexts —  
 > but any use or reproduction requires **written consent** or **formal attribution and compensation** in accordance with the license.
 
+🧠 Ok, here is the code there is prize money on the line i left a crucial step out but its easy if you see what i did there with the words i used so please get me credit
+here for the prize money if this is prize worthy i submitted it :-) Rule 30 can indeed be fully inversed from any row and i believe this to be the case for many more so 
+i am curious for collaboration and future research! Also let's not let the machines try to solve them all without me and we so please respect the liscence! This is a humam endouver and we should get the credit as i thought this was particularly easy to do so what about the rest of them ! prize money ! just say no way to ai its my money 🧠
+
+```
+In [1]: In [2]: def rule30_inverse_fast(nxt, w, tag=0):
+   ...:    ...:      # seeds
+   ...:    ...:      p0 = (tag >> 0) & 1
+   ...:    ...:      p1 = (tag >> 1) & 1
+   ...:    ...:
+   ...:    ...:      prev = 0
+   ...:    ...:      if p0: prev |= (1 << 0)
+   ...:    ...:      if p1: prev |= (1 << 1)
+   ...:    ...:
+   ...:    ...:      # start with i=0 context (C=prev[0], R=prev[1])
+   ...:    ...:      C, R = p0, p1
+   ...:    ...:
+   ...:    ...:      # recover prev[w-1] from r(0), C, R
+   ...:    ...:      L = (((nxt >> 0) & 1) ^ (C | R)) & 1  # Fixed: added opening paren
+   ...:    ...:      if L: prev |= (1 << (w-1))
+   ...:    ...:
+   ...:    ...:      # now walk i = w-1 .. 2
+   ...:    ...:      C, R = L, p0
+   ...:    ...:      for i in range(w-1, 1, -1):
+   ...:    ...:          L = (((nxt >> i) & 1) ^ (C | R)) & 1  # Direct bit extraction
+   ...:    ...:          if L: prev |= (1 << (i-1))
+   ...:    ...:          # roll window left: (C,R) := (L, C)
+   ...:    ...:          C, R = L, C
+   ...:    ...:
+   ...:    ...:      return prev
+   ...:    ...:
+
+
+  1237903436 01001001110010001110100001001100
+   993762264 00111011001110111001101111011000
+   291926320 00010001011001100111000100110000
+   256036704 00001111010000101100111101100000
+    81691840 00000100110111101000010011000000
+    59358592 00000011100010011011110110000000
+    17240832 00000001000001110001001100000000
+    16578048 00000000111111001111011000000000
+     4738048 00000000010010000100110000000000
+     3921920 00000000001110111101100000000000
+     1126400 00000000000100010011000000000000
+     1007616 00000000000011110110000000000000
+      311296 00000000000001001100000000000000
+      229376 00000000000000111000000000000000
+       65536 00000000000000010000000000000000
+
+```
 ---
 
 ## 📚 Stephen Wolfram on Cellular Automata Rule 30’s Irreversibility
