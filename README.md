@@ -53,13 +53,13 @@ In [1]: In [2]: def rule30_inverse_fast(nxt, w, tag=0):
    ...:    ...:      C, R = p0, p1
    ...:    ...:
    ...:    ...:      # recover prev[w-1] from r(0), C, R
-   ...:    ...:      L = (((nxt >> 0) & 1) ^ (C | R)) & 1  # Fixed: added opening paren
+   ...:    ...:      L = (((nxt >> 0) & 1) ^ (C | R)) & 1 
    ...:    ...:      if L: prev |= (1 << (w-1))
    ...:    ...:
    ...:    ...:      # now walk i = w-1 .. 2
    ...:    ...:      C, R = L, p0
    ...:    ...:      for i in range(w-1, 1, -1):
-   ...:    ...:          L = (((nxt >> i) & 1) ^ (C | R)) & 1  # Direct bit extraction
+   ...:    ...:          L = (((nxt >> i) & 1) ^ (C | R)) & 1  
    ...:    ...:          if L: prev |= (1 << (i-1))
    ...:    ...:          # roll window left: (C,R) := (L, C)
    ...:    ...:          C, R = L, C
