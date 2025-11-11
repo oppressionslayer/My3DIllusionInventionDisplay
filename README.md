@@ -86,6 +86,11 @@ In [1]: In [2]: def rule30_inverse_fast(nxt, w, tag=0):
 
 ```
 
+## 📚 LREL PRIZE REVEAL
+![LREL Copyright Banner](rule30PrizeWinningSolutionTeaseScreenshot.png)
+
+
+
 🧠 “Maybe I just gave away the key — or maybe I only gave away the door. Either way, if anyone out there truly sees it, you’ll know what I mean.
 I’m sharing this because the pursuit of understanding matters more than keeping secrets. But don’t get me wrong — I still know which step I left out 😉.
 
