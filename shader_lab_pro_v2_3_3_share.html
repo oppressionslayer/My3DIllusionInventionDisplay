@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Interactive WebGL shader playground with spiral, starfield, fractal, maze lattice, and floral thorns visualizations">
+    <meta property="og:title" content="Shader Lab Pro">
+    <meta property="og:description" content="Interactive WebGL shader playground - Create stunning visual effects">
+    <meta property="og:type" content="website">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com;">
+    <title>Shader Lab Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg-dark:#0a0a0f;--bg-panel:#12121a;--accent-cyan:#00fff2;--accent-magenta:#ff00aa;--accent-gold:#ffd700;--accent-purple:#8844ff;--text-dim:#666680;--text-light:#e0e0f0;--border:#2a2a3a}
+        body{font-family:'JetBrains Mono',monospace;background:var(--bg-dark);color:var(--text-light);min-height:100vh;overflow-x:hidden}
+        .container{display:grid;grid-template-columns:1fr 380px;min-height:100vh}
+        .shader-view{position:relative;background:#000;height:100vh;position:sticky;top:0;align-self:start}
+        canvas{width:100%;height:100%;display:block}
+        .fps-counter{position:absolute;top:16px;left:16px;background:rgba(0,0,0,0.7);padding:8px 12px;border-radius:6px;font-size:12px;color:var(--accent-cyan);border:1px solid var(--border)}
+        .control-panel{background:var(--bg-panel);border-left:1px solid var(--border);padding:24px;overflow-y:auto;max-height:100vh}
+        .panel-header{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;margin-bottom:8px;background:linear-gradient(135deg,var(--accent-cyan),var(--accent-magenta));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .panel-subtitle{font-size:12px;color:var(--text-dim);margin-bottom:24px}
+        .mode-selector{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;padding:4px;background:var(--bg-dark);border-radius:10px;border:1px solid var(--border)}
+        .mode-btn{flex:1 1 calc(50% - 4px);min-width:100px;padding:12px 16px;background:transparent;border:none;border-radius:8px;color:var(--text-dim);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:6px}
+        .mode-btn:hover{color:var(--text-light);background:rgba(255,255,255,0.05)}
+        .mode-btn.active{background:linear-gradient(135deg,var(--accent-cyan),var(--accent-magenta));color:#000}
+        .section{margin-bottom:28px}
+        .section-title{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--accent-gold);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+        .section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+        .control-group{margin-bottom:20px}
+        .control-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:13px}
+        .control-value{color:var(--accent-cyan);font-weight:700;min-width:60px;text-align:right}
+        .slider-container{position:relative;height:8px;background:var(--bg-dark);border-radius:4px;overflow:hidden}
+        .slider-fill{position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg,var(--accent-cyan),var(--accent-magenta));border-radius:4px;pointer-events:none}
+        input[type="range"]{-webkit-appearance:none;width:100%;height:8px;background:transparent;cursor:pointer;position:relative;z-index:2}
+        input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:var(--text-light);border-radius:50%;cursor:grab;box-shadow:0 0 10px rgba(0,255,242,0.5)}
+        .color-picker-wrapper{display:flex;align-items:center;gap:12px}
+        input[type="color"]{-webkit-appearance:none;width:48px;height:32px;border:2px solid var(--border);border-radius:6px;cursor:pointer;background:transparent}
+        input[type="color"]::-webkit-color-swatch-wrapper{padding:2px}
+        input[type="color"]::-webkit-color-swatch{border-radius:3px;border:none}
+        .color-hex{font-size:12px;color:var(--text-dim)}
+        .toggle-wrapper{display:flex;align-items:center;gap:12px}
+        .toggle{position:relative;width:48px;height:26px;background:var(--bg-dark);border-radius:13px;cursor:pointer;border:1px solid var(--border)}
+        .toggle.active{background:linear-gradient(135deg,var(--accent-cyan),var(--accent-magenta));border-color:transparent}
+        .toggle-knob{position:absolute;top:3px;left:3px;width:18px;height:18px;background:var(--text-light);border-radius:50%;transition:transform 0.3s}
+        .toggle.active .toggle-knob{transform:translateX(22px)}
+        .preset-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+        .preset-btn{padding:10px 12px;background:var(--bg-dark);border:1px solid var(--border);border-radius:6px;color:var(--text-light);font-family:inherit;font-size:11px;cursor:pointer;transition:all 0.2s}
+        .preset-btn:hover{border-color:var(--accent-cyan);background:rgba(0,255,242,0.1)}
+        .preset-btn.active{border-color:var(--accent-magenta);background:rgba(255,0,170,0.2)}
+        .info-box{background:var(--bg-dark);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:24px}
+        .info-box h4{font-size:12px;color:var(--accent-gold);margin-bottom:8px}
+        .info-box p{font-size:11px;color:var(--text-dim);line-height:1.6}
+        .code-snippet{background:#000;padding:2px 6px;border-radius:3px;color:var(--accent-cyan)}
+        .star-badge{background:linear-gradient(135deg,var(--accent-purple),var(--accent-cyan));color:#000;font-size:8px;padding:2px 5px;border-radius:3px;margin-left:6px;font-weight:700}
+        .export-btn{background:linear-gradient(135deg,var(--accent-cyan),var(--accent-magenta));border:none;color:#000;font-family:inherit;font-size:11px;font-weight:700;padding:8px 14px;border-radius:6px;cursor:pointer;transition:all 0.2s}
+        .export-btn:hover{transform:scale(1.05);box-shadow:0 0 20px rgba(0,255,242,0.4)}
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+        .modal-overlay.active{display:flex}
+        .modal-content{background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;width:90%;max-width:700px;max-height:80vh;display:flex;flex-direction:column}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--border)}
+        .modal-header h2{font-family:'Space Grotesk',sans-serif;font-size:20px;background:linear-gradient(135deg,var(--accent-cyan),var(--accent-magenta));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .modal-close{background:none;border:none;color:var(--text-dim);font-size:20px;cursor:pointer}
+        .modal-subtitle{padding:16px 24px 8px;font-size:12px;color:var(--text-dim)}
+        .modal-subtitle a{color:var(--accent-cyan)}
+        .code-output{flex:1;margin:12px 24px;padding:16px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--accent-cyan);font-family:inherit;font-size:11px;line-height:1.5;resize:none;min-height:300px;overflow-y:auto}
+        .modal-actions{display:flex;align-items:center;gap:16px;padding:16px 24px 20px;border-top:1px solid var(--border)}
+        .copy-btn{background:var(--accent-cyan);border:none;color:#000;font-family:inherit;font-size:12px;font-weight:700;padding:10px 20px;border-radius:6px;cursor:pointer}
+        .copy-status{font-size:12px;color:var(--accent-gold)}
+        @media(max-width:900px){.container{grid-template-columns:1fr;grid-template-rows:40vh auto}.shader-view{position:relative;height:40vh}.control-panel{border-left:none;border-top:1px solid var(--border);overflow-y:auto;max-height:60vh}}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="shader-view">
+        <canvas id="glCanvas"></canvas>
+        <div class="fps-counter">FPS: <span id="fps">60</span></div>
+    </div>
+    <div class="control-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+            <h1 class="panel-header">Shader Lab Pro</h1>
+            <button class="export-btn" id="exportBtn">📤 Export</button>
+        </div>
+        <p class="panel-subtitle" id="panelSubtitle">Multi-Mode • 5 Shaders</p>
+        <div class="mode-selector" id="modeSelector"></div>
+        <div class="modal-overlay" id="exportModal">
+            <div class="modal-content">
+                <div class="modal-header"><h2>🎨 Shadertoy Export</h2><button class="modal-close" id="modalClose">✕</button></div>
+                <p class="modal-subtitle">Copy and paste into <a href="https://www.shadertoy.com/new" target="_blank">Shadertoy</a></p>
+                <textarea class="code-output" id="codeOutput" readonly></textarea>
+                <div class="modal-actions"><button class="copy-btn" id="copyBtn">📋 Copy</button><span class="copy-status" id="copyStatus"></span></div>
+            </div>
+        </div>
+        <div id="controlsContainer"></div>
+        <div class="info-box">
+            <h4>💡 Current Mode</h4>
+            <p id="effectInfo">Select a shader mode above.</p>
+        </div>
+    </div>
+</div>
+<script>
+const SHADERS = {};
+
+// ============================================================================
+// SHADER: SPIRAL
+// ============================================================================
+SHADERS.spiral = {
+    name: 'Spiral', icon: '🌀',
+    description: 'Spiral mode using <span class="code-snippet">atan()</span> polar coordinates.',
+    params: { arms: 5, twist: 3, scale: 1, speed: 1, pulse: 0.5, color1: [0, 1, 0.95], color2: [1, 0, 0.67], bgColor: [0.04, 0.04, 0.1], glow: true, noise: 0.3, vignette: 0.4, sharpness: 1, turbulence: 0 },
+    controls: [
+        { section: 'Geometry', items: [
+            { id: 'arms', label: 'Spiral Arms', type: 'slider', min: 1, max: 12, step: 1, format: v => Math.round(v) },
+            { id: 'twist', label: 'Twist', type: 'slider', min: 0, max: 10, step: 0.1, format: v => v.toFixed(1) },
+            { id: 'scale', label: 'Scale', type: 'slider', min: 0.2, max: 2, step: 0.05, format: v => v.toFixed(2) },
+            { id: 'sharpness', label: 'Sharpness', type: 'slider', min: 0.2, max: 4, step: 0.1, format: v => v.toFixed(1) }
+        ]},
+        { section: 'Animation', items: [
+            { id: 'speed', label: 'Speed', type: 'slider', min: 0, max: 2, step: 0.05, format: v => v.toFixed(2) },
+            { id: 'pulse', label: 'Pulse', type: 'slider', min: 0, max: 1, step: 0.01, format: v => v.toFixed(2) },
+            { id: 'turbulence', label: 'Turbulence', type: 'slider', min: 0, max: 1, step: 0.01, format: v => v.toFixed(2) }
+        ]},
+        { section: 'Colors', items: [
+            { id: 'color1', label: 'Primary', type: 'color', default: '#00fff2' },
+            { id: 'color2', label: 'Secondary', type: 'color', default: '#ff00aa' },
+            { id: 'bgColor', label: 'Background', type: 'color', default: '#0a0a1a' }
+        ]},
+        { section: 'Effects', items: [
+            { id: 'glow', label: 'Glow', type: 'toggle', hint: 'Bloom' },
+            { id: 'noise', label: 'Noise', type: 'slider', min: 0, max: 1, step: 0.01, format: v => v.toFixed(2) },
+            { id: 'vignette', label: 'Vignette', type: 'slider', min: 0, max: 1, step: 0.01, format: v => v.toFixed(2) }
+        ]}
+    ],
+    presets: {
+        cosmic: { arms: 5, twist: 3, scale: 1, speed: 1, pulse: 0.5, color1: '#00fff2', color2: '#ff00aa', bgColor: '#0a0a1a', glow: true, noise: 0.3, vignette: 0.4, sharpness: 1, turbulence: 0 },
+        plasma: { arms: 3, twist: 5, scale: 0.8, speed: 1.5, pulse: 0.8, color1: '#ff6600', color2: '#ffff00', bgColor: '#1a0500', glow: true, noise: 0.6, vignette: 0.3, sharpness: 0.5, turbulence: 0.3 },
+        vortex: { arms: 8, twist: 8, scale: 1.2, speed: 0.8, pulse: 0.2, color1: '#4400ff', color2: '#00ff88', bgColor: '#000510', glow: true, noise: 0.1, vignette: 0.6, sharpness: 2, turbulence: 0 },
+        nebula: { arms: 2, twist: 2, scale: 0.6, speed: 0.3, pulse: 0.9, color1: '#ff0066', color2: '#6600ff', bgColor: '#050008', glow: true, noise: 0.8, vignette: 0.2, sharpness: 0.4, turbulence: 0.5 },
+        hyperdrive: { arms: 12, twist: 10, scale: 1.5, speed: 2, pulse: 0.1, color1: '#ffffff', color2: '#00ccff', bgColor: '#000008', glow: true, noise: 0.05, vignette: 0.8, sharpness: 4, turbulence: 0 },
+        dreamscape: { arms: 2, twist: 1.5, scale: 0.5, speed: 0.15, pulse: 0.95, color1: '#ff99cc', color2: '#99ccff', bgColor: '#0d0810', glow: true, noise: 0.9, vignette: 0.15, sharpness: 0.3, turbulence: 0.7 }
+    },
+    fragmentShader: `precision highp float;
+uniform vec2 u_resolution;uniform float u_time,u_arms,u_twist,u_scale,u_speed,u_pulse;
+uniform vec3 u_color1,u_color2,u_bgColor;uniform float u_glow,u_noise,u_vignette,u_sharpness,u_turbulence;
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
+float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*noise(p);p*=2.;a*=.5;}return v;}
+void main(){
+    vec2 uv=(gl_FragCoord.xy-.5*u_resolution)/min(u_resolution.x,u_resolution.y)*u_scale;
+    float time=u_time*u_speed;
+    if(u_turbulence>0.)(uv+=(vec2(fbm(uv*2.+time*.3),fbm(uv*2.+time*.3+100.))-.5)*u_turbulence*.5);
+    float r=length(uv),angle=atan(uv.y,uv.x);
+    float spiral=pow(sin(angle*u_arms+r*u_twist*10.-time*2.)*.5+.5,u_sharpness);
+    float rings=pow(sin(r*20.-time*3.)*.5+.5,2.);
+    float pattern=mix(spiral,rings,u_pulse);
+    pattern=mix(pattern,pattern*(.5+fbm(uv*3.+time*.5)),u_noise);
+    vec3 col=mix(u_bgColor,u_color1,pattern*.7);
+    col=mix(col,u_color2,pow(pattern,2.)*.5);
+    if(u_glow>.5)col+=u_color1*exp(-r*2.)*pattern*.5;
+    col*=clamp(1.-r*u_vignette,0.,1.);
+    gl_FragColor=vec4(pow(col,vec3(.8)),1.);
+}`,
+    setUniforms: (gl, program, params, time) => {
+        gl.uniform2f(gl.getUniformLocation(program, 'u_resolution'), gl.canvas.width, gl.canvas.height);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_time'), time);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_arms'), params.arms);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_twist'), params.twist);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_scale'), params.scale);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_speed'), params.speed);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_pulse'), params.pulse);
+        gl.uniform3fv(gl.getUniformLocation(program, 'u_color1'), params.color1);
+        gl.uniform3fv(gl.getUniformLocation(program, 'u_color2'), params.color2);
+        gl.uniform3fv(gl.getUniformLocation(program, 'u_bgColor'), params.bgColor);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_glow'), params.glow ? 1 : 0);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_noise'), params.noise);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_vignette'), params.vignette);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_sharpness'), params.sharpness);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_turbulence'), params.turbulence);
+    },
+    generateExport: (params) => {
+        const c1 = `vec3(${params.color1.map(v => v.toFixed(3)).join(',')})`;
+        const c2 = `vec3(${params.color2.map(v => v.toFixed(3)).join(',')})`;
+        const bg = `vec3(${params.bgColor.map(v => v.toFixed(3)).join(',')})`;
+        return `// Spiral Shader - Shader Lab Pro
+#define ARMS ${params.arms.toFixed(1)}
+#define TWIST ${params.twist.toFixed(2)}
+#define SCALE ${params.scale.toFixed(2)}
+#define SPEED ${params.speed.toFixed(2)}
+#define PULSE ${params.pulse.toFixed(2)}
+#define SHARPNESS ${params.sharpness.toFixed(2)}
+#define TURBULENCE ${params.turbulence.toFixed(2)}
+#define GLOW ${params.glow ? '1.0' : '0.0'}
+#define NOISE_AMT ${params.noise.toFixed(2)}
+#define VIGNETTE ${params.vignette.toFixed(2)}
+#define COLOR1 ${c1}
+#define COLOR2 ${c2}
+#define BG_COLOR ${bg}
+
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
+float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*noise(p);p*=2.;a*=.5;}return v;}
+
+void mainImage(out vec4 O,vec2 U){
+    vec2 uv=(U-.5*iResolution.xy)/min(iResolution.x,iResolution.y)*SCALE;
+    float t=iTime*SPEED;
+    if(TURBULENCE>0.)uv+=(vec2(fbm(uv*2.+t*.3),fbm(uv*2.+t*.3+100.))-.5)*TURBULENCE*.5;
+    float r=length(uv),a=atan(uv.y,uv.x);
+    float sp=pow(sin(a*ARMS+r*TWIST*10.-t*2.)*.5+.5,SHARPNESS);
+    float rg=pow(sin(r*20.-t*3.)*.5+.5,2.);
+    float p=mix(sp,rg,PULSE);
+    p=mix(p,p*(.5+fbm(uv*3.+t*.5)),NOISE_AMT);
+    vec3 c=mix(BG_COLOR,COLOR1,p*.7);c=mix(c,COLOR2,pow(p,2.)*.5);
+    if(GLOW>.5)c+=COLOR1*exp(-r*2.)*p*.5;
+    c*=clamp(1.-r*VIGNETTE,0.,1.);
+    O=vec4(pow(c,vec3(.8)),1.);
+}`;
+    }
+};
+
+// ============================================================================
+// SHADER: STARFIELD
+// ============================================================================
+SHADERS.starfield = {
+    name: 'Starfield', icon: '✨',
+    description: 'Volumetric <span class="code-snippet">abs(p)/dot(p,p)</span> fractals with cosmic streams.',
+    params: { volSteps: 18, stepSize: 0.15, iterations: 15, brightness: 0.002, distFading: 0.78, starSaturation: 0.92, trailLayers: 8, trailWidth: 25, trailIntensity: 0.8, sparkleCount: 25, flowSpeed: 0.6, rotSpeed: 0.03, centerGlow: 0.4, paletteShift: 0 },
+    controls: [
+        { section: 'Volumetric Space', items: [
+            { id: 'volSteps', label: 'Volume Steps', type: 'slider', min: 5, max: 30, step: 1, format: v => Math.round(v), badge: 'VOL' },
+            { id: 'stepSize', label: 'Step Size', type: 'slider', min: 0.05, max: 0.5, step: 0.01, format: v => v.toFixed(2) },
+            { id: 'iterations', label: 'Iterations', type: 'slider', min: 5, max: 25, step: 1, format: v => Math.round(v) },
+            { id: 'brightness', label: 'Brightness', type: 'slider', min: 0.0005, max: 0.01, step: 0.0005, format: v => v.toFixed(4) },
+            { id: 'distFading', label: 'Dist Fading', type: 'slider', min: 0.3, max: 1, step: 0.01, format: v => v.toFixed(2) }
+        ]},
+        { section: 'Streams & Trails', items: [
+            { id: 'trailLayers', label: 'Trail Layers', type: 'slider', min: 0, max: 15, step: 1, format: v => Math.round(v) },
+            { id: 'trailWidth', label: 'Trail Width', type: 'slider', min: 5, max: 50, step: 1, format: v => Math.round(v) },
+            { id: 'trailIntensity', label: 'Trail Intensity', type: 'slider', min: 0, max: 1.5, step: 0.05, format: v => v.toFixed(2) },
+            { id: 'sparkleCount', label: 'Sparkles', type: 'slider', min: 0, max: 50, step: 1, format: v => Math.round(v) }
+        ]},
+        { section: 'Animation', items: [
+            { id: 'flowSpeed', label: 'Flow Speed', type: 'slider', min: 0, max: 2, step: 0.05, format: v => v.toFixed(2) },
+            { id: 'rotSpeed', label: 'Rotation', type: 'slider', min: 0, max: 0.1, step: 0.005, format: v => v.toFixed(3) },
+            { id: 'centerGlow', label: 'Center Glow', type: 'slider', min: 0, max: 1, step: 0.05, format: v => v.toFixed(2) }
+        ]},
+        { section: 'Color', items: [
+            { id: 'starSaturation', label: 'Saturation', type: 'slider', min: 0, max: 1, step: 0.01, format: v => v.toFixed(2) },
+            { id: 'paletteShift', label: 'Palette Shift', type: 'slider', min: 0, max: 1, step: 0.01, format: v => v.toFixed(2) }
+        ]}
+    ],
+    presets: {
+        cosmic_streams: { volSteps: 18, stepSize: 0.15, iterations: 15, brightness: 0.002, distFading: 0.78, starSaturation: 0.92, trailLayers: 8, trailWidth: 25, trailIntensity: 0.8, sparkleCount: 25, flowSpeed: 0.6, rotSpeed: 0.03, centerGlow: 0.4, paletteShift: 0 },
+        deep_space: { volSteps: 25, stepSize: 0.12, iterations: 20, brightness: 0.001, distFading: 0.85, starSaturation: 0.7, trailLayers: 3, trailWidth: 40, trailIntensity: 0.3, sparkleCount: 40, flowSpeed: 0.2, rotSpeed: 0.01, centerGlow: 0.2, paletteShift: 0.5 },
+        warp_drive: { volSteps: 12, stepSize: 0.25, iterations: 8, brightness: 0.006, distFading: 0.5, starSaturation: 0.6, trailLayers: 15, trailWidth: 8, trailIntensity: 1.5, sparkleCount: 50, flowSpeed: 2, rotSpeed: 0.08, centerGlow: 0.6, paletteShift: 0 },
+        the_void: { volSteps: 30, stepSize: 0.08, iterations: 25, brightness: 0.0008, distFading: 0.95, starSaturation: 0.3, trailLayers: 0, trailWidth: 25, trailIntensity: 0, sparkleCount: 8, flowSpeed: 0.1, rotSpeed: 0.005, centerGlow: 0.1, paletteShift: 0.3 },
+        supernova: { volSteps: 20, stepSize: 0.2, iterations: 18, brightness: 0.008, distFading: 0.6, starSaturation: 1.0, trailLayers: 12, trailWidth: 15, trailIntensity: 1.2, sparkleCount: 50, flowSpeed: 1.2, rotSpeed: 0.06, centerGlow: 1.0, paletteShift: 0.7 },
+        northern_lights: { volSteps: 22, stepSize: 0.1, iterations: 12, brightness: 0.0015, distFading: 0.88, starSaturation: 0.85, trailLayers: 15, trailWidth: 50, trailIntensity: 0.6, sparkleCount: 15, flowSpeed: 0.25, rotSpeed: 0.015, centerGlow: 0.3, paletteShift: 0.25 }
+    },
+    fragmentShader: `precision highp float;
+uniform vec2 u_resolution;uniform float u_time;
+uniform float u_volSteps,u_stepSize,u_iterations,u_brightness,u_distFading,u_starSaturation;
+uniform float u_trailLayers,u_trailWidth,u_trailIntensity,u_sparkleCount;
+uniform float u_flowSpeed,u_rotSpeed,u_centerGlow,u_paletteShift;
+mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}
+vec3 hash33(vec3 p){p=fract(p*vec3(443.897,441.423,437.195));p+=dot(p,p.yzx+19.19);return fract((p.xxy+p.yxx)*p.zyx);}
+vec3 cosmicPal(float t){vec3 a=vec3(.5,.3,.6),b=vec3(.5,.7,.4),c=vec3(1.,.8,.6),d=vec3(.1,.6,.9)+.1*sin(u_time*vec3(.3,.2,.4));return a+b*cos(6.28318*(c*(t+u_paletteShift)+d));}
+float streamTrail(vec2 uv,vec2 p1,vec2 p2,float w){vec2 pa=uv-p1,ba=p2-p1;return exp(-length(pa-ba*clamp(dot(pa,ba)/dot(ba,ba),0.,1.))*w);}
+void main(){
+    vec2 uv=(gl_FragCoord.xy-.5*u_resolution)/min(u_resolution.x,u_resolution.y);
+    uv*=1.8+.001*cos(uv.y-.4*u_time);uv.y+=.03*cos(u_time*.8);
+    vec3 ro=vec3(.5,.3,.2),rd=normalize(vec3(uv*.7,1.));
+    float s=.1,fade=1.;vec3 v=vec3(0.);
+    for(int r=0;r<30;r++){
+        if(float(r)>=u_volSteps)break;
+        vec3 p=ro+s*rd*.5;p=abs(vec3(.8)-mod(p,vec3(1.6)));
+        float pa=0.,a=0.;
+        for(int i=0;i<25;i++){
+            if(float(i)>=u_iterations)break;
+            p=abs(p)/dot(p,p)-.52;
+            vec2 rxy=rot(u_time*u_rotSpeed)*p.xy;p=vec3(rxy,p.z);
+            vec2 rxz=rot(u_time*u_rotSpeed*.67)*p.xz;p=vec3(rxz.x,p.y,rxz.y);
+            a+=abs(length(p)-pa);pa=length(p);
+        }
+        float dm=max(0.,.25-a*a*.001);a*=a*a;
+        if(r>6)fade*=1.-dm;
+        v+=fade;v+=vec3(s,s*s,s*s*s)*a*u_brightness*fade;
+        fade*=u_distFading;s+=u_stepSize;
+    }
+    v=mix(vec3(length(v)),v,u_starSaturation)*.015;
+    vec3 streamCol=vec3(0.);float time=u_time*u_flowSpeed;
+    for(int il=0;il<15;il++){
+        float layer=float(il);
+        if(layer>=u_trailLayers)break;
+        float t=time+layer*.5;
+        vec2 p1=vec2(.3*sin(t*.8+layer),.2*cos(t*.6+layer*.3));
+        vec2 p2=vec2(.4*sin(t*.9+layer+1.),.3*cos(t*.7+layer*.4+2.));
+        float trail=streamTrail(uv,p1,p2,u_trailWidth+15.*sin(layer+u_time*.4));
+        streamCol+=cosmicPal(layer*.15+length(uv)*.2)*trail*(.3+.2*sin(layer+u_time));
+    }
+    vec3 sparkles=vec3(0.);
+    for(int i=0;i<50;i++){
+        if(float(i)>=u_sparkleCount)break;
+        float fi=float(i);
+        vec3 sparklePos=hash33(vec3(fi*.1,fi*.07,u_time*.1))-.5;sparklePos.xy*=.8;
+        float life=fract(fi*.1+u_time*.3),size=(1.-life)*life*4.;
+        sparkles+=cosmicPal(fi*.1+life)*exp(-length(uv-sparklePos.xy)*(50.+size*20.))*size;
+    }
+    vec3 finalCol=v+streamCol*u_trailIntensity+sparkles*.6;
+    finalCol+=cosmicPal(u_time*.1)*u_centerGlow*exp(-3.*length(uv));
+    finalCol+=.09*cosmicPal(length(uv)*.5+u_time*.2);
+    finalCol=pow(.71-exp(-finalCol*.727),vec3(.727));
+    gl_FragColor=vec4(finalCol,1.);
+}`,
+    setUniforms: (gl, program, params, time) => {
+        gl.uniform2f(gl.getUniformLocation(program, 'u_resolution'), gl.canvas.width, gl.canvas.height);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_time'), time);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_volSteps'), params.volSteps);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_stepSize'), params.stepSize);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_iterations'), params.iterations);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_brightness'), params.brightness);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_distFading'), params.distFading);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_starSaturation'), params.starSaturation);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_trailLayers'), params.trailLayers);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_trailWidth'), params.trailWidth);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_trailIntensity'), params.trailIntensity);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_sparkleCount'), params.sparkleCount);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_flowSpeed'), params.flowSpeed);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_rotSpeed'), params.rotSpeed);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_centerGlow'), params.centerGlow);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_paletteShift'), params.paletteShift);
+    },
+    generateExport: (params) => `// Cosmic Streams - Shader Lab Pro
+#define VOL_STEPS ${Math.round(params.volSteps)}
+#define STEP_SIZE ${params.stepSize.toFixed(3)}
+#define ITERATIONS ${Math.round(params.iterations)}
+#define BRIGHTNESS ${params.brightness.toFixed(5)}
+#define DIST_FADING ${params.distFading.toFixed(3)}
+#define SATURATION ${params.starSaturation.toFixed(3)}
+#define TRAIL_LAYERS ${Math.round(params.trailLayers)}
+#define TRAIL_WIDTH ${params.trailWidth.toFixed(1)}
+#define TRAIL_INTENSITY ${params.trailIntensity.toFixed(2)}
+#define SPARKLE_COUNT ${Math.round(params.sparkleCount)}
+#define FLOW_SPEED ${params.flowSpeed.toFixed(2)}
+#define ROT_SPEED ${params.rotSpeed.toFixed(4)}
+#define CENTER_GLOW ${params.centerGlow.toFixed(2)}
+#define PALETTE_SHIFT ${params.paletteShift.toFixed(2)}
+
+mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}
+vec3 hash33(vec3 p){p=fract(p*vec3(443.897,441.423,437.195));p+=dot(p,p.yzx+19.19);return fract((p.xxy+p.yxx)*p.zyx);}
+vec3 cosmicPal(float t){vec3 a=vec3(.5,.3,.6),b=vec3(.5,.7,.4),c=vec3(1.,.8,.6),d=vec3(.1,.6,.9)+.1*sin(iTime*vec3(.3,.2,.4));return a+b*cos(6.28318*(c*(t+PALETTE_SHIFT)+d));}
+float streamTrail(vec2 uv,vec2 p1,vec2 p2,float w){vec2 pa=uv-p1,ba=p2-p1;return exp(-length(pa-ba*clamp(dot(pa,ba)/dot(ba,ba),0.,1.))*w);}
+
+void mainImage(out vec4 O,vec2 U){
+    vec2 uv=(U-.5*iResolution.xy)/min(iResolution.x,iResolution.y);
+    uv*=1.8+.001*cos(uv.y-.4*iTime);uv.y+=.03*cos(iTime*.8);
+    vec3 ro=vec3(.5,.3,.2),rd=normalize(vec3(uv*.7,1.));
+    float s=.1,fade=1.;vec3 v=vec3(0.);
+    for(int r=0;r<VOL_STEPS;r++){
+        vec3 p=ro+s*rd*.5;p=abs(vec3(.8)-mod(p,vec3(1.6)));
+        float pa=0.,a=0.;
+        for(int i=0;i<ITERATIONS;i++){p=abs(p)/dot(p,p)-.52;p.xy=rot(iTime*ROT_SPEED)*p.xy;p.xz=rot(iTime*ROT_SPEED*.67)*p.xz;a+=abs(length(p)-pa);pa=length(p);}
+        float dm=max(0.,.25-a*a*.001);a*=a*a;if(r>6)fade*=1.-dm;
+        v+=fade;v+=vec3(s,s*s,s*s*s)*a*BRIGHTNESS*fade;fade*=DIST_FADING;s+=STEP_SIZE;
+    }
+    v=mix(vec3(length(v)),v,SATURATION)*.015;
+    vec3 streamCol=vec3(0.);float time=iTime*FLOW_SPEED;
+    for(int layer=0;layer<TRAIL_LAYERS;layer++){
+        float fl=float(layer),t=time+fl*.5;
+        vec2 p1=vec2(.3*sin(t*.8+fl),.2*cos(t*.6+fl*.3)),p2=vec2(.4*sin(t*.9+fl+1.),.3*cos(t*.7+fl*.4+2.));
+        streamCol+=cosmicPal(fl*.15+length(uv)*.2)*streamTrail(uv,p1,p2,TRAIL_WIDTH+15.*sin(fl+iTime*.4))*(.3+.2*sin(fl+iTime));
+    }
+    vec3 sparkles=vec3(0.);
+    for(int i=0;i<SPARKLE_COUNT;i++){
+        float fi=float(i);vec3 sparklePos=hash33(vec3(fi*.1,fi*.07,iTime*.1))-.5;sparklePos.xy*=.8;
+        float life=fract(fi*.1+iTime*.3),size=(1.-life)*life*4.;
+        sparkles+=cosmicPal(fi*.1+life)*exp(-length(uv-sparklePos.xy)*(50.+size*20.))*size;
+    }
+    vec3 finalCol=v+streamCol*TRAIL_INTENSITY+sparkles*.6;
+    finalCol+=cosmicPal(iTime*.1)*CENTER_GLOW*exp(-3.*length(uv));
+    finalCol+=.09*cosmicPal(length(uv)*.5+iTime*.2);
+    O=vec4(pow(.71-exp(-finalCol*.727),vec3(.727)),1.);
+}`
+};
+
+// ============================================================================
+// SHADER: FRACTAL (YouTube tutorial palette shader)
+// ============================================================================
+SHADERS.fractal = {
+    name: 'Fractal', icon: '🔮',
+    description: 'Iterative <span class="code-snippet">fract()</span> scaling with IQ palette colors.',
+    params: { iterations: 4, fractScale: 1.5, ringFreq: 8, ringSpeed: 1, colorSpeed: 0.4, brightness: 1.2, falloff: 1.2, zoom: 1 },
+    controls: [
+        { section: 'Geometry', items: [
+            { id: 'iterations', label: 'Iterations', type: 'slider', min: 1, max: 8, step: 1, format: v => Math.round(v) },
+            { id: 'fractScale', label: 'Fract Scale', type: 'slider', min: 1.1, max: 3, step: 0.1, format: v => v.toFixed(1) },
+            { id: 'zoom', label: 'Zoom', type: 'slider', min: 0.5, max: 2, step: 0.1, format: v => v.toFixed(1) }
+        ]},
+        { section: 'Rings', items: [
+            { id: 'ringFreq', label: 'Ring Frequency', type: 'slider', min: 2, max: 16, step: 1, format: v => Math.round(v) },
+            { id: 'ringSpeed', label: 'Ring Speed', type: 'slider', min: 0, max: 3, step: 0.1, format: v => v.toFixed(1) }
+        ]},
+        { section: 'Color & Light', items: [
+            { id: 'colorSpeed', label: 'Color Speed', type: 'slider', min: 0, max: 1, step: 0.05, format: v => v.toFixed(2) },
+            { id: 'brightness', label: 'Brightness', type: 'slider', min: 0.5, max: 3, step: 0.1, format: v => v.toFixed(1) },
+            { id: 'falloff', label: 'Falloff', type: 'slider', min: 0.5, max: 2, step: 0.1, format: v => v.toFixed(1) }
+        ]}
+    ],
+    presets: {
+        classic: { iterations: 4, fractScale: 1.5, ringFreq: 8, ringSpeed: 1, colorSpeed: 0.4, brightness: 1.2, falloff: 1.2, zoom: 1 },
+        hypnotic: { iterations: 6, fractScale: 1.8, ringFreq: 12, ringSpeed: 0.5, colorSpeed: 0.2, brightness: 1.5, falloff: 1.0, zoom: 0.8 },
+        cosmic_web: { iterations: 8, fractScale: 1.3, ringFreq: 6, ringSpeed: 2, colorSpeed: 0.6, brightness: 2, falloff: 1.5, zoom: 1.2 },
+        minimal: { iterations: 2, fractScale: 2, ringFreq: 4, ringSpeed: 0.3, colorSpeed: 0.1, brightness: 0.8, falloff: 0.8, zoom: 1.5 },
+        electric_storm: { iterations: 7, fractScale: 1.4, ringFreq: 16, ringSpeed: 3, colorSpeed: 0.8, brightness: 2.5, falloff: 0.6, zoom: 0.6 },
+        zen_infinity: { iterations: 5, fractScale: 1.6, ringFreq: 5, ringSpeed: 0.15, colorSpeed: 0.05, brightness: 1.0, falloff: 1.8, zoom: 1.8 }
+    },
+    fragmentShader: `precision highp float;
+uniform vec2 u_resolution;uniform float u_time;
+uniform float u_iterations,u_fractScale,u_ringFreq,u_ringSpeed,u_colorSpeed,u_brightness,u_falloff,u_zoom;
+void main(){
+    vec2 R=u_resolution,U=(gl_FragCoord.xy*2.-R)/R.y*u_zoom;
+    vec4 O=vec4(0.);
+    float l=length(U);
+    float d;
+    for(int i=0;i<8;i++){
+        if(float(i)>=u_iterations)break;
+        U=fract(U*u_fractScale)-.5;
+        d=length(U)*exp(-l);
+        d=pow(abs(.08/sin(d*u_ringFreq+u_time*u_ringSpeed)),u_falloff);
+        O+=d*(.5+.5*cos(6.28*(l+float(i)*.4+u_time*u_colorSpeed+vec4(.26,.42,.56,0))));
+    }
+    gl_FragColor=vec4(O.rgb*u_brightness*.1,1.);
+}`,
+    setUniforms: (gl, program, params, time) => {
+        gl.uniform2f(gl.getUniformLocation(program, 'u_resolution'), gl.canvas.width, gl.canvas.height);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_time'), time);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_iterations'), params.iterations);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_fractScale'), params.fractScale);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_ringFreq'), params.ringFreq);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_ringSpeed'), params.ringSpeed);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_colorSpeed'), params.colorSpeed);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_brightness'), params.brightness);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_falloff'), params.falloff);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_zoom'), params.zoom);
+    },
+    generateExport: (params) => `// Fractal Palette - Shader Lab Pro
+// Based on: https://youtu.be/f4s1h2YETNY | https://iquilezles.org/articles/palettes/
+vec3 palette(float t){vec3 a=vec3(.5),b=vec3(.5),c=vec3(1.),d=vec3(.263,.416,.557);return a+b*cos(6.28318*(c*t+d));}
+void mainImage(out vec4 O,vec2 u){
+    vec2 R=iResolution.xy,U=(u+u-R)/R.y*${params.zoom.toFixed(2)};O*=0.;
+    for(float l=length(U),d,i=0.;i<${Math.round(params.iterations)}.;i++)
+        U=fract(U*${params.fractScale.toFixed(2)})-.5,
+        d=length(U)*exp(-l),
+        d=pow(abs(.08/sin(d*${params.ringFreq.toFixed(1)}+iTime*${params.ringSpeed.toFixed(2)})),${params.falloff.toFixed(2)}),
+        O+=d*(.5+.5*cos(6.28*(l+i*.4+iTime*${params.colorSpeed.toFixed(2)}+vec4(.26,.42,.56,0))));
+    O*=${params.brightness.toFixed(2)}*.1;O.a=1.;
+}`
+};
+
+// ============================================================================
+// SHADER: RADIOLARIAN (Simplified preview + full export)
+// ============================================================================
+// ============================================================================
+// SHADER: MAZE LATTICE (Based on Fizzer's elegant maze distance field)
+// ============================================================================
+SHADERS.mazeLattice = {
+    name: 'Maze Lattice', icon: '🧱',
+    description: 'Fizzer\'s elegant <span class="code-snippet">octahedral SDF</span> maze with hexagonal Truchet patterns.',
+    params: { speed: 0.25, tubeWidth: 0.2, patternScale: 6.0, rotationSpeed: 0.25, edgeThickness: 0.034, reflectivity: 0.25, brightness: 1.2, warmth: 0.5, vignette: 0.125, fogDistance: 100, raySteps: 64 },
+    controls: [
+        { section: 'Maze Geometry', items: [
+            { id: 'tubeWidth', label: 'Tube Width', type: 'slider', min: 0.1, max: 0.4, step: 0.01, format: v => v.toFixed(2), badge: 'SDF' },
+            { id: 'patternScale', label: 'Pattern Scale', type: 'slider', min: 2, max: 12, step: 0.5, format: v => v.toFixed(1) },
+            { id: 'edgeThickness', label: 'Edge Width', type: 'slider', min: 0.01, max: 0.08, step: 0.002, format: v => v.toFixed(3) }
+        ]},
+        { section: 'Animation', items: [
+            { id: 'speed', label: 'Travel Speed', type: 'slider', min: 0, max: 1, step: 0.05, format: v => v.toFixed(2) },
+            { id: 'rotationSpeed', label: 'Rotation', type: 'slider', min: 0, max: 0.5, step: 0.01, format: v => v.toFixed(2) }
+        ]},
+        { section: 'Lighting', items: [
+            { id: 'brightness', label: 'Brightness', type: 'slider', min: 0.5, max: 2, step: 0.1, format: v => v.toFixed(1) },
+            { id: 'reflectivity', label: 'Reflections', type: 'slider', min: 0, max: 0.5, step: 0.05, format: v => v.toFixed(2) },
+            { id: 'warmth', label: 'Warmth', type: 'slider', min: 0, max: 1, step: 0.05, format: v => v.toFixed(2) }
+        ]},
+        { section: 'Atmosphere', items: [
+            { id: 'fogDistance', label: 'Fog Distance', type: 'slider', min: 50, max: 200, step: 10, format: v => Math.round(v) },
+            { id: 'vignette', label: 'Vignette', type: 'slider', min: 0, max: 0.3, step: 0.01, format: v => v.toFixed(2) },
+            { id: 'raySteps', label: 'Ray Quality', type: 'slider', min: 32, max: 96, step: 8, format: v => Math.round(v) }
+        ]}
+    ],
+    presets: {
+        classic: { speed: 0.25, tubeWidth: 0.2, patternScale: 6.0, rotationSpeed: 0.25, edgeThickness: 0.034, reflectivity: 0.25, brightness: 1.2, warmth: 0.5, vignette: 0.125, fogDistance: 100, raySteps: 64 },
+        tight_maze: { speed: 0.15, tubeWidth: 0.12, patternScale: 8.0, rotationSpeed: 0.15, edgeThickness: 0.02, reflectivity: 0.3, brightness: 1.0, warmth: 0.3, vignette: 0.1, fogDistance: 80, raySteps: 80 },
+        wide_halls: { speed: 0.35, tubeWidth: 0.35, patternScale: 4.0, rotationSpeed: 0.3, edgeThickness: 0.05, reflectivity: 0.15, brightness: 1.4, warmth: 0.7, vignette: 0.15, fogDistance: 150, raySteps: 48 },
+        ethereal: { speed: 0.1, tubeWidth: 0.25, patternScale: 5.0, rotationSpeed: 0.08, edgeThickness: 0.04, reflectivity: 0.4, brightness: 0.9, warmth: 0.2, vignette: 0.2, fogDistance: 60, raySteps: 64 },
+        golden_temple: { speed: 0.12, tubeWidth: 0.28, patternScale: 10.0, rotationSpeed: 0.05, edgeThickness: 0.06, reflectivity: 0.35, brightness: 1.6, warmth: 1.0, vignette: 0.2, fogDistance: 120, raySteps: 72 },
+        neon_rush: { speed: 0.5, tubeWidth: 0.15, patternScale: 3.0, rotationSpeed: 0.5, edgeThickness: 0.025, reflectivity: 0.5, brightness: 1.8, warmth: 0.0, vignette: 0.25, fogDistance: 180, raySteps: 56 }
+    },
+    fragmentShader: `precision highp float;
+uniform vec2 u_resolution;uniform float u_time;
+uniform float u_speed,u_tubeWidth,u_patternScale,u_rotationSpeed;
+uniform float u_edgeThickness,u_reflectivity,u_brightness,u_warmth;
+uniform float u_vignette,u_fogDistance,u_raySteps;
+
+float map(vec3 p){
+    vec3 ip=floor(p)+.5;
+    p-=ip;
+    vec3 q=abs(p);
+    q=step(q.yzx,q.xyz)*step(q.zxy,q.xyz)*sign(p);
+    q.x=fract(sin(dot(ip+q*.5,vec3(111.67,147.31,27.53)))*43758.5453);
+    p.xy=abs(q.x>.333?q.x>.666?p.xz:p.yz:p.xy);
+    return max(p.x,p.y)-u_tubeWidth;
+}
+
+float trace(vec3 ro,vec3 rd){
+    float t=0.;
+    for(int i=0;i<96;i++){
+        if(float(i)>=u_raySteps)break;
+        float d=map(ro+rd*t);
+        if(abs(d)<.002*(t*.125+1.)||t>u_fogDistance)break;
+        t+=d;
+    }
+    return min(t,u_fogDistance);
+}
+
+vec3 normal(vec3 p){
+    vec2 e=vec2(.005,0);
+    return normalize(vec3(
+        map(p+e.xyy)-map(p-e.xyy),
+        map(p+e.yxy)-map(p-e.yxy),
+        map(p+e.yyx)-map(p-e.yyx)
+    ));
+}
+
+float edge(vec3 p){
+    vec2 e=vec2(u_edgeThickness,0);
+    float d1=map(p+e.xyy),d2=map(p-e.xyy);
+    float d3=map(p+e.yxy),d4=map(p-e.yxy);
+    float d5=map(p+e.yyx),d6=map(p-e.yyx);
+    float d=map(p)*2.;
+    float ed=abs(d1+d2-d)+abs(d3+d4-d)+abs(d5+d6-d);
+    ed=smoothstep(0.,1.,sqrt(ed/e.x*8.));
+    float crv=(d1+d2+d3+d4+d5+d6-d*3.)/e.x;
+    return crv<0.?0.:ed;
+}
+
+float hexTruchet(vec2 p){
+    p*=u_patternScale;
+    vec2 h=vec2(p.x+p.y*.577350269,p.y*1.154700538);
+    vec2 f=fract(h);h-=f;
+    float c=fract((h.x+h.y)/3.);
+    h=c<.666?c<.333?h:h+1.:h+step(f.yx,f);
+    p-=vec2(h.x-h.y*.5,h.y*.8660254);
+    c=fract(cos(dot(h,vec2(41.13,289.57)))*43758.5453);
+    p-=p*step(c,.5)*2.;
+    p-=vec2(-1,0);c=dot(p,p);
+    p-=vec2(1.5,.8660254);c=min(c,dot(p,p));
+    p-=vec2(0,-1.73205);c=min(c,dot(p,p));
+    return sqrt(c);
+}
+
+float n2D(vec2 p){
+    vec2 i=floor(p);p-=i;p*=p*(3.-p*2.);
+    return dot(mat2(fract(sin(vec4(0,41,289,330)+dot(i,vec2(41,289)))*43758.5453))*vec2(1.-p.y,p.y),vec2(1.-p.x,p.x));
+}
+
+vec3 texFaces(vec3 p,vec3 n){
+    n=abs(n);
+    p.xy=n.x>.5?p.yz:n.y>.5?p.xz:p.xy;
+    n=mix(vec3(.3,.1,.02),vec3(.35,.5,.65),n2D(p.xy*8.)*.66+n2D(p.xy*16.)*.34);
+    n*=n2D(p.xy*512.)*1.2+1.4;
+    vec2 sc=cos(hexTruchet(p.xy)*6.283*vec2(2,4));
+    n*=clamp(dot(sc,vec2(.6))+.5,0.,1.)*.95+.05;
+    return min(n,1.);
+}
+
+vec3 texEdges(vec3 p,vec3 n){
+    n=abs(n);
+    p.xy=n.x>.5?p.yz:n.y>.5?p.xz:p.xy;
+    n=mix(vec3(.3,.1,.02),vec3(.35,.5,.65),n2D(p.xy*8.)*.66+n2D(p.xy*16.)*.34);
+    n*=n2D(p.xy*512.)*.85+.15;
+    return min((n+.35)*vec3(1.05,1,.9),1.);
+}
+
+float shadow(vec3 ro,vec3 lp){
+    vec3 rd=(lp-ro);float end=max(length(rd),.001);rd/=end;
+    float shade=1.,dist=.05;
+    for(int i=0;i<16;i++){
+        float h=map(ro+rd*dist);
+        shade=min(shade,smoothstep(0.,1.,16.*h/dist));
+        dist+=clamp(h,.02,.25);
+        if(h<.001||dist>end)break;
+    }
+    return min(max(shade,0.)+.3,1.);
+}
+
+float ao(vec3 p,vec3 n){
+    float occ=0.;
+    for(float i=1.;i<13.;i++){
+        float l=(i+fract(cos(i)*45758.5453))*.5/12.;
+        occ+=(l-map(p+n*l))/pow(1.+l,1.);
+    }
+    return clamp(1.-occ*2./12.,0.,1.);
+}
+
+void main(){
+    vec3 rd=vec3(2.*gl_FragCoord.xy-u_resolution,u_resolution.y);
+    rd=normalize(vec3(rd.xy,sqrt(max(rd.z*rd.z-dot(rd.xy,rd.xy)*.2,0.))));
+    vec2 m=sin(vec2(1.5708,0)+u_time*u_rotationSpeed);
+    rd.xy=rd.xy*mat2(m.xy,-m.y,m.x);
+    rd.xz=rd.xz*mat2(m.xy,-m.y,m.x);
+    vec3 ro=vec3(0,0,u_time*u_speed*4.);
+    vec3 lp=ro+vec3(.2,1.,.3);
+    float t=trace(ro,rd);
+    vec3 sp=ro+rd*t;
+    vec3 sn=normal(sp);
+    float ed=edge(sp);
+    vec3 oCol=ed<.001?texFaces(sp,sn):texEdges(sp,sn);
+    float sh=shadow(sp,lp);
+    float occ=ao(sp,sn);
+    vec3 ld=normalize(lp-sp);
+    float lDist=length(lp-sp);
+    float diff=max(dot(ld,sn),0.);
+    float spec=pow(max(dot(reflect(-ld,sn),-rd),0.),32.);
+    float atten=1.25/(1.+lDist*.1+lDist*lDist*.05);
+    vec3 col=oCol*(diff+vec3(.45,.4,.3))+vec3(1.,.6,.2)*spec*2.;
+    col+=oCol*u_reflectivity*(ed<.001?.2:.35);
+    col=min(col*atten*sh*occ,1.)*u_brightness;
+    vec3 bg=mix(vec3(.5,.7,1).zyx,vec3(1,.7,.3).zyx,-rd.y*.35+.35);
+    col=mix(col,bg,smoothstep(0.,u_fogDistance-25.,t));
+    vec2 uv=gl_FragCoord.xy/u_resolution;
+    float vig=pow(16.*uv.x*uv.y*(1.-uv.x)*(1.-uv.y),u_vignette);
+    col*=mix(vec3(1),vec3(1.2,1.1,.85),u_warmth)*vig;
+    gl_FragColor=vec4(sqrt(clamp(col,0.,1.)),1.);
+}`,
+    setUniforms: (gl, program, params, time) => {
+        gl.uniform2f(gl.getUniformLocation(program,'u_resolution'),gl.canvas.width,gl.canvas.height);
+        gl.uniform1f(gl.getUniformLocation(program,'u_time'),time);
+        gl.uniform1f(gl.getUniformLocation(program,'u_speed'),params.speed);
+        gl.uniform1f(gl.getUniformLocation(program,'u_tubeWidth'),params.tubeWidth);
+        gl.uniform1f(gl.getUniformLocation(program,'u_patternScale'),params.patternScale);
+        gl.uniform1f(gl.getUniformLocation(program,'u_rotationSpeed'),params.rotationSpeed);
+        gl.uniform1f(gl.getUniformLocation(program,'u_edgeThickness'),params.edgeThickness);
+        gl.uniform1f(gl.getUniformLocation(program,'u_reflectivity'),params.reflectivity);
+        gl.uniform1f(gl.getUniformLocation(program,'u_brightness'),params.brightness);
+        gl.uniform1f(gl.getUniformLocation(program,'u_warmth'),params.warmth);
+        gl.uniform1f(gl.getUniformLocation(program,'u_vignette'),params.vignette);
+        gl.uniform1f(gl.getUniformLocation(program,'u_fogDistance'),params.fogDistance);
+        gl.uniform1f(gl.getUniformLocation(program,'u_raySteps'),params.raySteps);
+    },
+    generateExport: (params) => `// Maze Lattice - Shader Lab Pro
+// Based on Fizzer's elegant octahedral maze: http://amietia.com/slashmaze.html
+#define SPEED ${params.speed.toFixed(3)}
+#define TUBE_WIDTH ${params.tubeWidth.toFixed(3)}
+#define PATTERN_SCALE ${params.patternScale.toFixed(2)}
+#define ROT_SPEED ${params.rotationSpeed.toFixed(3)}
+#define EDGE_WIDTH ${params.edgeThickness.toFixed(4)}
+#define REFLECTIVITY ${params.reflectivity.toFixed(3)}
+#define BRIGHTNESS ${params.brightness.toFixed(2)}
+#define WARMTH ${params.warmth.toFixed(2)}
+#define VIGNETTE ${params.vignette.toFixed(3)}
+#define FOG_DIST ${params.fogDistance.toFixed(1)}
+#define RAY_STEPS ${Math.round(params.raySteps)}
+
+float map(vec3 p){
+    vec3 ip=floor(p)+.5;p-=ip;
+    vec3 q=abs(p);
+    q=step(q.yzx,q.xyz)*step(q.zxy,q.xyz)*sign(p);
+    q.x=fract(sin(dot(ip+q*.5,vec3(111.67,147.31,27.53)))*43758.5453);
+    p.xy=abs(q.x>.333?q.x>.666?p.xz:p.yz:p.xy);
+    return max(p.x,p.y)-TUBE_WIDTH;
+}
+
+float trace(vec3 ro,vec3 rd){
+    float t=0.;
+    for(int i=0;i<RAY_STEPS;i++){
+        float d=map(ro+rd*t);
+        if(abs(d)<.002*(t*.125+1.)||t>FOG_DIST)break;
+        t+=d;
+    }
+    return min(t,FOG_DIST);
+}
+
+vec3 normal(vec3 p){vec2 e=vec2(.005,0);return normalize(vec3(map(p+e.xyy)-map(p-e.xyy),map(p+e.yxy)-map(p-e.yxy),map(p+e.yyx)-map(p-e.yyx)));}
+
+float hexTruchet(vec2 p){
+    p*=PATTERN_SCALE;vec2 h=vec2(p.x+p.y*.577350269,p.y*1.154700538);
+    vec2 f=fract(h);h-=f;float c=fract((h.x+h.y)/3.);
+    h=c<.666?c<.333?h:h+1.:h+step(f.yx,f);p-=vec2(h.x-h.y*.5,h.y*.8660254);
+    c=fract(cos(dot(h,vec2(41.13,289.57)))*43758.5453);p-=p*step(c,.5)*2.;
+    p-=vec2(-1,0);c=dot(p,p);p-=vec2(1.5,.8660254);c=min(c,dot(p,p));
+    p-=vec2(0,-1.73205);return sqrt(min(c,dot(p,p)));
+}
+
+float n2D(vec2 p){vec2 i=floor(p);p-=i;p*=p*(3.-p*2.);return dot(mat2(fract(sin(vec4(0,41,289,330)+dot(i,vec2(41,289)))*43758.5453))*vec2(1.-p.y,p.y),vec2(1.-p.x,p.x));}
+
+void mainImage(out vec4 O,vec2 U){
+    vec3 rd=vec3(2.*U-iResolution.xy,iResolution.y);
+    rd=normalize(vec3(rd.xy,sqrt(max(rd.z*rd.z-dot(rd.xy,rd.xy)*.2,0.))));
+    vec2 m=sin(vec2(1.5708,0)+iTime*ROT_SPEED);
+    rd.xy*=mat2(m.xy,-m.y,m.x);rd.xz*=mat2(m.xy,-m.y,m.x);
+    vec3 ro=vec3(0,0,iTime*SPEED*4.),lp=ro+vec3(.2,1.,.3);
+    float t=trace(ro,rd);vec3 sp=ro+rd*t,sn=normal(sp);
+    vec3 n=abs(sn);vec2 puv=n.x>.5?sp.yz:n.y>.5?sp.xz:sp.xy;
+    vec3 oCol=mix(vec3(.3,.1,.02),vec3(.35,.5,.65),n2D(puv*8.)*.66+n2D(puv*16.)*.34);
+    oCol*=n2D(puv*512.)*1.2+1.4;
+    vec2 sc=cos(hexTruchet(puv)*6.283*vec2(2,4));
+    oCol*=clamp(dot(sc,vec2(.6))+.5,0.,1.)*.95+.05;
+    vec3 ld=normalize(lp-sp);float diff=max(dot(ld,sn),0.);
+    float spec=pow(max(dot(reflect(-ld,sn),-rd),0.),32.);
+    vec3 col=oCol*(diff+vec3(.45,.4,.3))+vec3(1.,.6,.2)*spec*2.;
+    col*=BRIGHTNESS;col=mix(col,vec3(.5,.7,1).zyx,smoothstep(0.,FOG_DIST-25.,t));
+    vec2 uv=U/iResolution.xy;col*=mix(vec3(1),vec3(1.2,1.1,.85),WARMTH)*pow(16.*uv.x*uv.y*(1.-uv.x)*(1.-uv.y),VIGNETTE);
+    O=vec4(sqrt(clamp(col,0.,1.)),1.);
+}`
+};
+
+// ============================================================================
+// SHADER: FLORAL THORNS (Mirror fractal with flowing energy)
+// ============================================================================
+SHADERS.floralThorns = {
+    name: 'Floral Thorns', icon: '🌸',
+    description: 'Kaleidoscopic mirror fractal with <span class="code-snippet">sin()</span> layering and glow accumulation.',
+    params: { speed: 1.0, mirrorScale: 0.25, mirrorOffset: 0.5, rotationDepth: 0.2, rotationTime: 0.02, fractalLayers: 6, baseFreq: 1.0, timeModY: 0.8, timeModZ: 0.5, glowIntensity: 0.75, fogDepth: 0.9, exposure: 5e7, gamma: 0.4545 },
+    controls: [
+        { section: 'Mirror Folding', items: [
+            { id: 'mirrorScale', label: 'Mirror Scale', type: 'slider', min: 0.1, max: 0.5, step: 0.01, format: v => v.toFixed(2), badge: 'FOLD' },
+            { id: 'mirrorOffset', label: 'Mirror Offset', type: 'slider', min: 0.2, max: 1.0, step: 0.05, format: v => v.toFixed(2) }
+        ]},
+        { section: 'Animation', items: [
+            { id: 'speed', label: 'Flow Speed', type: 'slider', min: 0, max: 3, step: 0.1, format: v => v.toFixed(1) },
+            { id: 'rotationTime', label: 'Rotation Rate', type: 'slider', min: 0, max: 0.1, step: 0.005, format: v => v.toFixed(3) },
+            { id: 'rotationDepth', label: 'Z Rotation', type: 'slider', min: 0, max: 0.5, step: 0.02, format: v => v.toFixed(2) }
+        ]},
+        { section: 'Fractal Detail', items: [
+            { id: 'fractalLayers', label: 'Fractal Layers', type: 'slider', min: 3, max: 8, step: 1, format: v => Math.round(v) },
+            { id: 'baseFreq', label: 'Base Frequency', type: 'slider', min: 0.5, max: 2, step: 0.1, format: v => v.toFixed(1) },
+            { id: 'timeModY', label: 'Y Time Mod', type: 'slider', min: 0, max: 2, step: 0.1, format: v => v.toFixed(1) },
+            { id: 'timeModZ', label: 'Z Time Mod', type: 'slider', min: 0, max: 2, step: 0.1, format: v => v.toFixed(1) }
+        ]},
+        { section: 'Visuals', items: [
+            { id: 'glowIntensity', label: 'Glow', type: 'slider', min: 0.3, max: 1.5, step: 0.05, format: v => v.toFixed(2) },
+            { id: 'fogDepth', label: 'Fog Depth', type: 'slider', min: 0.5, max: 1.5, step: 0.1, format: v => v.toFixed(1) },
+            { id: 'exposure', label: 'Exposure', type: 'slider', min: 1e7, max: 1e8, step: 5e6, format: v => (v/1e7).toFixed(1)+'e7' },
+            { id: 'gamma', label: 'Gamma', type: 'slider', min: 0.3, max: 0.6, step: 0.01, format: v => v.toFixed(2) }
+        ]}
+    ],
+    presets: {
+        default: { speed: 1.0, mirrorScale: 0.25, mirrorOffset: 0.5, rotationDepth: 0.2, rotationTime: 0.02, fractalLayers: 6, baseFreq: 1.0, timeModY: 0.8, timeModZ: 0.5, glowIntensity: 0.75, fogDepth: 0.9, exposure: 5e7, gamma: 0.4545 },
+        neon_bloom: { speed: 1.5, mirrorScale: 0.3, mirrorOffset: 0.6, rotationDepth: 0.3, rotationTime: 0.03, fractalLayers: 7, baseFreq: 1.2, timeModY: 1.0, timeModZ: 0.7, glowIntensity: 1.2, fogDepth: 0.7, exposure: 7e7, gamma: 0.5 },
+        slow_drift: { speed: 0.4, mirrorScale: 0.2, mirrorOffset: 0.4, rotationDepth: 0.1, rotationTime: 0.01, fractalLayers: 5, baseFreq: 0.8, timeModY: 0.5, timeModZ: 0.3, glowIntensity: 0.6, fogDepth: 1.2, exposure: 4e7, gamma: 0.42 },
+        chaos: { speed: 2.0, mirrorScale: 0.35, mirrorOffset: 0.7, rotationDepth: 0.4, rotationTime: 0.05, fractalLayers: 8, baseFreq: 1.5, timeModY: 1.5, timeModZ: 1.0, glowIntensity: 1.0, fogDepth: 0.6, exposure: 6e7, gamma: 0.48 },
+        cyber_lotus: { speed: 0.8, mirrorScale: 0.4, mirrorOffset: 0.3, rotationDepth: 0.15, rotationTime: 0.008, fractalLayers: 8, baseFreq: 0.5, timeModY: 0.3, timeModZ: 0.2, glowIntensity: 0.9, fogDepth: 1.0, exposure: 3e7, gamma: 0.4 },
+        fever_dream: { speed: 2.5, mirrorScale: 0.18, mirrorOffset: 0.8, rotationDepth: 0.5, rotationTime: 0.07, fractalLayers: 7, baseFreq: 2.0, timeModY: 2.0, timeModZ: 1.5, glowIntensity: 1.5, fogDepth: 0.5, exposure: 9e7, gamma: 0.55 }
+    },
+    fragmentShader: `precision highp float;
+uniform vec2 u_resolution;uniform float u_time;
+uniform float u_speed,u_mirrorScale,u_mirrorOffset,u_rotationDepth,u_rotationTime;
+uniform float u_fractalLayers,u_baseFreq,u_timeModY,u_timeModZ;
+uniform float u_glowIntensity,u_fogDepth,u_exposure,u_gamma;
+
+vec4 tanhApprox(vec4 x){return (exp(2.0*x)-1.0)/(exp(2.0*x)+1.0);}
+
+void main(){
+    vec2 uv=(gl_FragCoord.xy-.5*u_resolution)/u_resolution.y;
+    vec4 o=vec4(0.);
+    float t=-u_time*u_speed;
+    float d=0.,s=0.;
+    vec3 p=vec3(0.);
+    for(int i=0;i<300;i++){
+        s=.007+abs(s)*.1;
+        d+=s;
+        o+=sin(d*u_glowIntensity+vec4(.1,u_fogDepth-p.z,.3,0.))/(abs(s)+1e-4);
+        p=vec3(uv*d,d+u_time*u_speed*4.);
+        p=abs(p*u_mirrorScale)-u_mirrorOffset;
+        float a=u_rotationTime*t+p.z*u_rotationDepth;
+        float ca=cos(a),sa=sin(a);
+        vec2 rotated=vec2(ca*p.x+sa*p.y,-sa*p.x+ca*p.y);
+        p=vec3(rotated,p.z);
+        s=sin(u_baseFreq+p.x+p.y);
+        float n=3.;
+        for(int j=0;j<5;j++){
+            if(n>u_fractalLayers*3.)break;
+            vec3 freq=p*n;
+            vec3 timeMod=vec3(0.,2.+sin(u_time*.25)*u_timeModY,2.+sin(u_time*.1)*u_timeModZ);
+            s+=abs(dot(1.75*sin(freq),timeMod))/n;
+            n=n*2.;
+        }
+    }
+    vec4 tone=tanhApprox(o*o/u_exposure);
+    gl_FragColor=vec4(pow(tone.r,u_gamma),pow(tone.g,u_gamma),pow(tone.b,u_gamma),1.0);
+}`,
+    setUniforms: (gl, program, params, time) => {
+        gl.uniform2f(gl.getUniformLocation(program,'u_resolution'),gl.canvas.width,gl.canvas.height);
+        gl.uniform1f(gl.getUniformLocation(program,'u_time'),time);
+        gl.uniform1f(gl.getUniformLocation(program,'u_speed'),params.speed);
+        gl.uniform1f(gl.getUniformLocation(program,'u_mirrorScale'),params.mirrorScale);
+        gl.uniform1f(gl.getUniformLocation(program,'u_mirrorOffset'),params.mirrorOffset);
+        gl.uniform1f(gl.getUniformLocation(program,'u_rotationDepth'),params.rotationDepth);
+        gl.uniform1f(gl.getUniformLocation(program,'u_rotationTime'),params.rotationTime);
+        gl.uniform1f(gl.getUniformLocation(program,'u_fractalLayers'),params.fractalLayers);
+        gl.uniform1f(gl.getUniformLocation(program,'u_baseFreq'),params.baseFreq);
+        gl.uniform1f(gl.getUniformLocation(program,'u_timeModY'),params.timeModY);
+        gl.uniform1f(gl.getUniformLocation(program,'u_timeModZ'),params.timeModZ);
+        gl.uniform1f(gl.getUniformLocation(program,'u_glowIntensity'),params.glowIntensity);
+        gl.uniform1f(gl.getUniformLocation(program,'u_fogDepth'),params.fogDepth);
+        gl.uniform1f(gl.getUniformLocation(program,'u_exposure'),params.exposure);
+        gl.uniform1f(gl.getUniformLocation(program,'u_gamma'),params.gamma);
+    },
+    generateExport: (params) => `// Floral Thorns - Shader Lab Pro
+// Kaleidoscopic mirror fractal with sin layering
+// Based on: https://www.shadertoy.com/view/w3VGzc
+#define SPEED ${params.speed.toFixed(2)}
+#define MIRROR_SCALE ${params.mirrorScale.toFixed(3)}
+#define MIRROR_OFFSET ${params.mirrorOffset.toFixed(2)}
+#define ROT_DEPTH ${params.rotationDepth.toFixed(3)}
+#define ROT_TIME ${params.rotationTime.toFixed(4)}
+#define FRACTAL_LAYERS ${Math.round(params.fractalLayers)}
+#define BASE_FREQ ${params.baseFreq.toFixed(2)}
+#define TIME_MOD_Y ${params.timeModY.toFixed(2)}
+#define TIME_MOD_Z ${params.timeModZ.toFixed(2)}
+#define GLOW ${params.glowIntensity.toFixed(3)}
+#define FOG_DEPTH ${params.fogDepth.toFixed(2)}
+#define EXPOSURE ${params.exposure.toExponential(1)}
+#define GAMMA ${params.gamma.toFixed(4)}
+
+void mainImage(out vec4 o,vec2 u){
+    vec3 r=iResolution;float t=-iTime*SPEED;
+    vec2 uv=(u-.5*r.xy)/r.y;
+    o=vec4(0.);float d=0.,s=0.;vec3 p=vec3(0.);
+    for(float i=0.;i<300.;i++){
+        s=.007+abs(s)*.1;d+=s;
+        o+=sin(d*GLOW+vec4(.1,FOG_DEPTH-p.z,.3,0.))/(abs(s)+1e-4);
+        p=vec3(uv*d,d+iTime*SPEED*4.);
+        p=abs(p*MIRROR_SCALE)-MIRROR_OFFSET;
+        float a=ROT_TIME*t+p.z*ROT_DEPTH;
+        float ca=cos(a),sa=sin(a);
+        p.xy=mat2(ca,sa,-sa,ca)*p.xy;
+        s=sin(BASE_FREQ+p.x+p.y);
+        float nn=3.;
+        for(int j=0;j<FRACTAL_LAYERS;j++){
+            vec3 freq=p*nn;
+            vec3 timeMod=vec3(0.,2.+sin(iTime*.25)*TIME_MOD_Y,2.+sin(iTime*.1)*TIME_MOD_Z);
+            s+=abs(dot(1.75*sin(freq),timeMod))/nn;
+            nn=nn*2.;
+        }
+    }
+    o=tanh(o*o/EXPOSURE);
+    o=vec4(pow(o.r,GAMMA),pow(o.g,GAMMA),pow(o.b,GAMMA),1.);
+}`
+};
+
+// ============================================================================
+// RENDERING ENGINE
+// ============================================================================
+
+const canvas = document.getElementById('glCanvas');
+const gl = canvas.getContext('webgl');
+if (!gl) alert('WebGL not supported!');
+
+let currentMode = 'starfield';
+const programs = {};
+const vertexShaderSource = `attribute vec2 a_position;void main(){gl_Position=vec4(a_position,0.,1.);}`;
+
+// Compile shader
+function compileShader(gl, source, type) {
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.error('Shader error:', gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader);
+        return null;
+    }
+    return shader;
+}
+
+// Create program
+function createProgram(gl, vsSource, fsSource) {
+    const vs = compileShader(gl, vsSource, gl.VERTEX_SHADER);
+    const fs = compileShader(gl, fsSource, gl.FRAGMENT_SHADER);
+    if (!vs || !fs) return null;
+    const program = gl.createProgram();
+    gl.attachShader(program, vs);
+    gl.attachShader(program, fs);
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        console.error('Program error:', gl.getProgramInfoLog(program));
+        return null;
+    }
+    return program;
+}
+
+// Compile all shader programs
+for (const key in SHADERS) {
+    programs[key] = createProgram(gl, vertexShaderSource, SHADERS[key].fragmentShader);
+}
+
+// Fullscreen quad
+const positionBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
+
+// ============================================================================
+// UI GENERATION
+// ============================================================================
+
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? [parseInt(result[1],16)/255, parseInt(result[2],16)/255, parseInt(result[3],16)/255] : [0,0,0];
+}
+
+function rgbToHex(rgb) {
+    return '#' + rgb.map(v => Math.round(v*255).toString(16).padStart(2,'0')).join('');
+}
+
+function generateModeSelector() {
+    const selector = document.getElementById('modeSelector');
+    selector.innerHTML = '';
+    for (const key in SHADERS) {
+        const shader = SHADERS[key];
+        const btn = document.createElement('button');
+        btn.className = 'mode-btn' + (key === currentMode ? ' active' : '');
+        btn.dataset.mode = key;
+        btn.innerHTML = `<span class="mode-icon">${shader.icon}</span><span>${shader.name}</span>`;
+        btn.onclick = () => switchMode(key);
+        selector.appendChild(btn);
+    }
+}
+
+function generateControlsForShader(shaderKey) {
+    const shader = SHADERS[shaderKey];
+    const container = document.getElementById('controlsContainer');
+    container.innerHTML = '';
+    
+    shader.controls.forEach(section => {
+        const sectionDiv = document.createElement('div');
+        sectionDiv.className = 'section';
+        sectionDiv.innerHTML = `<div class="section-title">${section.section}</div>`;
+        
+        section.items.forEach(ctrl => {
+            const group = document.createElement('div');
+            group.className = 'control-group';
+            
+            if (ctrl.type === 'slider') {
+                const value = shader.params[ctrl.id];
+                const pct = ((value - ctrl.min) / (ctrl.max - ctrl.min)) * 100;
+                const badge = ctrl.badge ? `<span class="star-badge">${ctrl.badge}</span>` : '';
+                group.innerHTML = `
+                    <div class="control-label">
+                        <span class="control-name">${ctrl.label}${badge}</span>
+                        <span class="control-value" id="${ctrl.id}Value">${ctrl.format(value)}</span>
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-fill" id="${ctrl.id}Fill" style="width:${pct}%"></div>
+                        <input type="range" id="${ctrl.id}" min="${ctrl.min}" max="${ctrl.max}" value="${value}" step="${ctrl.step}">
+                    </div>`;
+            } else if (ctrl.type === 'color') {
+                const hex = Array.isArray(shader.params[ctrl.id]) ? rgbToHex(shader.params[ctrl.id]) : ctrl.default;
+                group.innerHTML = `
+                    <div class="control-label"><span class="control-name">${ctrl.label}</span></div>
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="${ctrl.id}" value="${hex}">
+                        <span class="color-hex" id="${ctrl.id}Hex">${hex}</span>
+                    </div>`;
+            } else if (ctrl.type === 'toggle') {
+                const active = shader.params[ctrl.id];
+                group.innerHTML = `
+                    <div class="control-label"><span class="control-name">${ctrl.label}</span></div>
+                    <div class="toggle-wrapper">
+                        <div class="toggle${active?' active':''}" id="${ctrl.id}Toggle"><div class="toggle-knob"></div></div>
+                        <span style="font-size:12px;color:var(--text-dim)">${ctrl.hint||''}</span>
+                    </div>`;
+            }
+            sectionDiv.appendChild(group);
+        });
+        container.appendChild(sectionDiv);
+    });
+    
+    // Presets section
+    const presetSection = document.createElement('div');
+    presetSection.className = 'section';
+    presetSection.innerHTML = `<div class="section-title">Presets</div><div class="preset-grid" id="presetGrid"></div>`;
+    container.appendChild(presetSection);
+    
+    const presetGrid = document.getElementById('presetGrid');
+    for (const presetKey in shader.presets) {
+        const btn = document.createElement('button');
+        btn.className = 'preset-btn';
+        btn.textContent = presetKey.replace(/_/g, ' ');
+        btn.onclick = () => applyPreset(shaderKey, presetKey);
+        presetGrid.appendChild(btn);
+    }
+    
+    bindControlEvents(shaderKey);
+}
+
+function bindControlEvents(shaderKey) {
+    const shader = SHADERS[shaderKey];
+    
+    shader.controls.forEach(section => {
+        section.items.forEach(ctrl => {
+            if (ctrl.type === 'slider') {
+                const slider = document.getElementById(ctrl.id);
+                const valueEl = document.getElementById(ctrl.id + 'Value');
+                const fillEl = document.getElementById(ctrl.id + 'Fill');
+                slider.oninput = () => {
+                    const v = parseFloat(slider.value);
+                    shader.params[ctrl.id] = v;
+                    valueEl.textContent = ctrl.format(v);
+                    fillEl.style.width = ((v - ctrl.min)/(ctrl.max - ctrl.min)*100) + '%';
+                };
+            } else if (ctrl.type === 'color') {
+                const picker = document.getElementById(ctrl.id);
+                const hexEl = document.getElementById(ctrl.id + 'Hex');
+                picker.oninput = () => {
+                    shader.params[ctrl.id] = hexToRgb(picker.value);
+                    hexEl.textContent = picker.value;
+                };
+            } else if (ctrl.type === 'toggle') {
+                const toggle = document.getElementById(ctrl.id + 'Toggle');
+                toggle.onclick = () => {
+                    shader.params[ctrl.id] = !shader.params[ctrl.id];
+                    toggle.classList.toggle('active', shader.params[ctrl.id]);
+                };
+            }
+        });
+    });
+}
+
+function applyPreset(shaderKey, presetKey) {
+    const shader = SHADERS[shaderKey];
+    const preset = shader.presets[presetKey];
+    
+    for (const key in preset) {
+        if (typeof preset[key] === 'string' && preset[key].startsWith('#')) {
+            shader.params[key] = hexToRgb(preset[key]);
+        } else {
+            shader.params[key] = preset[key];
+        }
+    }
+    
+    // Update UI
+    shader.controls.forEach(section => {
+        section.items.forEach(ctrl => {
+            if (ctrl.type === 'slider') {
+                const slider = document.getElementById(ctrl.id);
+                const valueEl = document.getElementById(ctrl.id + 'Value');
+                const fillEl = document.getElementById(ctrl.id + 'Fill');
+                const v = shader.params[ctrl.id];
+                slider.value = v;
+                valueEl.textContent = ctrl.format(v);
+                fillEl.style.width = ((v - ctrl.min)/(ctrl.max - ctrl.min)*100) + '%';
+            } else if (ctrl.type === 'color') {
+                const picker = document.getElementById(ctrl.id);
+                const hexEl = document.getElementById(ctrl.id + 'Hex');
+                const hex = rgbToHex(shader.params[ctrl.id]);
+                picker.value = hex;
+                hexEl.textContent = hex;
+            } else if (ctrl.type === 'toggle') {
+                const toggle = document.getElementById(ctrl.id + 'Toggle');
+                toggle.classList.toggle('active', shader.params[ctrl.id]);
+            }
+        });
+    });
+    
+    // Update preset buttons
+    document.querySelectorAll('#presetGrid .preset-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent === presetKey.replace(/_/g, ' '));
+    });
+}
+
+function switchMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
+    generateControlsForShader(mode);
+    document.getElementById('effectInfo').innerHTML = SHADERS[mode].description;
+}
+
+// ============================================================================
+// EXPORT MODAL
+// ============================================================================
+
+const exportModal = document.getElementById('exportModal');
+const codeOutput = document.getElementById('codeOutput');
+const copyStatus = document.getElementById('copyStatus');
+
+document.getElementById('exportBtn').onclick = () => {
+    const code = SHADERS[currentMode].generateExport(SHADERS[currentMode].params);
+    codeOutput.value = code;
+    exportModal.classList.add('active');
+};
+
+document.getElementById('modalClose').onclick = () => exportModal.classList.remove('active');
+exportModal.onclick = (e) => { if (e.target === exportModal) exportModal.classList.remove('active'); };
+
+document.getElementById('copyBtn').onclick = () => {
+    codeOutput.select();
+    document.execCommand('copy');
+    copyStatus.textContent = '✓ Copied!';
+    setTimeout(() => copyStatus.textContent = '', 2000);
+};
+
+// ============================================================================
+// RENDER LOOP
+// ============================================================================
+
+function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.clientWidth * dpr;
+    canvas.height = canvas.clientHeight * dpr;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+}
+window.addEventListener('resize', resize);
+resize();
+
+let frameCount = 0, lastTime = performance.now();
+const fpsEl = document.getElementById('fps');
+
+function render(time) {
+    time *= 0.001;
+    
+    const program = programs[currentMode];
+    const shader = SHADERS[currentMode];
+    
+    gl.useProgram(program);
+    
+    const posLoc = gl.getAttribLocation(program, 'a_position');
+    gl.enableVertexAttribArray(posLoc);
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+    
+    shader.setUniforms(gl, program, shader.params, time);
+    
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    
+    // FPS
+    frameCount++;
+    const now = performance.now();
+    if (now - lastTime >= 1000) {
+        fpsEl.textContent = frameCount;
+        frameCount = 0;
+        lastTime = now;
+    }
+    
+    requestAnimationFrame(render);
+}
+
+// Initialize
+generateModeSelector();
+generateControlsForShader(currentMode);
+document.getElementById('effectInfo').innerHTML = SHADERS[currentMode].description;
+requestAnimationFrame(render);
+</script>
+</body>
+</html>
